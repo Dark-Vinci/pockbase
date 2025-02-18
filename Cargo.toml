@@ -1,0 +1,14 @@
+[package]
+name = "pocketbase"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+flate2 = "1.0.35"
+oauth2 = "5.0.0"
+request = "0.0.8"
+tokio = { version = "1.43.0", features = ["full"] }
+zip = "2.2.2"
+serde = { version = "1.0.217", features = ["derive"] }
+chrono = "0.4.39"
+serde_json = "1.0.138"
