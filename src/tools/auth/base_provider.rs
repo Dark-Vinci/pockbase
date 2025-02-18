@@ -20,7 +20,7 @@ pub struct BaseProvider<'a> {
     user_info_url: &'a str,
     scopes: &'a [&'a str],
     pkce: bool,
-    extra: HashMap<&'a str, &'a dyn Any>,
+    extra: HashMap<&'a str, Box<dyn Any>>,
     provider_url: &'static str,
 }
 
@@ -97,11 +97,11 @@ impl<'a> BaseProvider<'a> {
         self.auth_url = user_info_url;
     }
 
-    pub fn extra(&self) -> HashMap<&str, &dyn Any> {
+    pub fn extra(&self) -> HashMap<&'a str, Box<dyn Any>> {
         self.extra.clone()
     }
 
-    pub fn set_extra(&mut self, extra: HashMap<&str, &dyn Any>) {
+    pub fn set_extra(&mut self, extra: HashMap<&'a str, Box<dyn Any>>) {
         self.extra = extra;
     }
 

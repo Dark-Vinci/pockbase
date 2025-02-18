@@ -986,6 +986,7 @@ dependencies = [
  "chrono",
  "flate2",
  "oauth2",
+ "once_cell",
  "request",
  "serde",
  "serde_json",
