@@ -5,7 +5,7 @@ use {
     std::{any::Any, collections::HashMap, error::Error},
 };
 
-type MyErr = Box<dyn Error + Send + Sync>;
+pub type MyErr = Box<dyn Error + Send + Sync>;
 type Token = oauth2::StandardTokenResponse<dyn ExtraTokenFields, dyn TokenType>;
 
 pub trait Provider<'a> {

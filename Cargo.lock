@@ -982,6 +982,7 @@ dependencies = [
 name = "pocketbase"
 version = "0.1.0"
 dependencies = [
+ "bytes",
  "chrono",
  "flate2",
  "oauth2",

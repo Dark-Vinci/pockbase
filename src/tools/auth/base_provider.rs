@@ -1,11 +1,9 @@
 use {
+    crate::tools::auth::auth::MyErr,
     oauth2::{
-        basic::{
-            BasicClient, BasicErrorResponse, BasicRevocationErrorResponse,
-            BasicTokenIntrospectionResponse, BasicTokenResponse,
-        },
-        reqwest, AuthUrl, ClientId, ClientSecret, EndpointNotSet, EndpointSet,
-        RedirectUrl, StandardRevocableToken, TokenUrl,
+        basic::{BasicClient, BasicErrorResponse, BasicTokenResponse},
+        reqwest, AuthUrl, AuthorizationCode, ClientId, ClientSecret,
+        CodeTokenRequest, RedirectUrl, TokenResponse, TokenUrl,
     },
     std::{any::Any, collections::HashMap},
 };
@@ -23,6 +21,7 @@ pub struct BaseProvider<'a> {
     scopes: &'a [&'a str],
     pkce: bool,
     extra: HashMap<&'a str, &'a dyn Any>,
+    provider_url: &'static str,
 }
 
 impl<'a> BaseProvider<'a> {
@@ -106,34 +105,61 @@ impl<'a> BaseProvider<'a> {
         self.extra = extra;
     }
 
-    pub fn oauth2_config(
+    pub fn client(
         &self,
-    ) -> oauth2::Client<
-        BasicErrorResponse,
-        BasicTokenResponse,
-        BasicTokenIntrospectionResponse,
-        StandardRevocableToken,
-        BasicRevocationErrorResponse,
-        EndpointSet,
-        EndpointNotSet,
-        EndpointNotSet,
-        EndpointNotSet,
-        EndpointSet,
-    > {
-        BasicClient::new(ClientId::new(self.client_id.into()))
+        code: &str,
+    ) -> CodeTokenRequest<BasicErrorResponse, BasicTokenResponse> {
+        let code = AuthorizationCode::new(code.into());
+
+        let res = BasicClient::new(ClientId::new(self.client_id.into()))
             .set_client_secret(ClientSecret::new(self.client_secret.into()))
             .set_auth_uri(AuthUrl::new(self.auth_url.into()).unwrap()) // handle unwrap
             .set_token_uri(TokenUrl::new(self.token_url.into()).unwrap()) // handle unwrap
             .set_redirect_uri(
                 RedirectUrl::new(self.redirect_url.into()).unwrap(),
             )
+            .exchange_code(code);
+
+        res
     }
 
-    pub fn client(&self, token: &str) -> () {
-        let a = oauth2::AuthorizationCode::new();
-        let req = reqwest::ClientBuilder::new()
+    pub fn fetch_user_raw_data(
+        &self,
+        token: BasicTokenResponse,
+    ) -> Result<bytes::Bytes, MyErr> {
+        self.send_raw_user_info_request(token)
+    }
+
+    pub async fn fetch_token(
+        &self,
+        token: &str,
+    ) -> Result<BasicTokenResponse, MyErr> {
+        let http_client = reqwest::ClientBuilder::new()
             .redirect(reqwest::redirect::Policy::none())
             .build()
+            .expect("Client should build");
+
+        let response = self.client(token).request_async(&http_client).await?;
+
+        Ok(response)
+    }
+
+    async fn send_raw_user_info_request(
+        &self,
+        token: BasicTokenResponse,
+    ) -> Result<bytes::Bytes, MyErr> {
+        let client = reqwest::Client::new();
+
+        let res = client
+            .get(self.provider_url)
+            .bearer_auth(token.access_token().secret())
+            .send()
+            .await
+            .unwrap()
+            .bytes()
+            .await
             .unwrap();
+
+        Ok(res)
     }
 }
