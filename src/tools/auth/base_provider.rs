@@ -154,11 +154,9 @@ impl<'a> BaseProvider<'a> {
             .get(self.provider_url)
             .bearer_auth(token.access_token().secret())
             .send()
-            .await
-            .unwrap()
+            .await?
             .bytes()
-            .await
-            .unwrap();
+            .await?;
 
         Ok(res)
     }
